@@ -1,5 +1,6 @@
 import abc
 import os
+import numpy
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, Optional, Tuple
 
@@ -12,8 +13,10 @@ if TYPE_CHECKING:
     from openff.toolkit import Molecule
 
     PositiveFloat = float
+    Array = numpy.ndarray
 else:
     from openff.recharge._pydantic import PositiveFloat
+    from openff.recharge.utilities.pydantic import Array, wrapped_array_validator
 
 
 class DFTGridSettings(Enum):
@@ -91,6 +94,11 @@ class ESPSettings(BaseModel):
         DFTGridSettings.Default,
         description="The DFT grid settings to use when performing computations with "
         "Psi4.",
+    )
+
+    perturb_dipole: Array[float] = Field(
+        Array[0.0, 0.0, 0.0],
+        description="The perturb dipole to use when imposing external electric field with Psi4.",
     )
 
 

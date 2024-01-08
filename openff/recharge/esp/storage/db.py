@@ -96,6 +96,7 @@ class DBGridSettings(_UniqueMixin, DBBase):
     lattice_outer_vdw_scale = Column(Integer, nullable=True)
 
     msk_density = Column(Integer, nullable=True)
+    msk_layers = Column(Integer, nullable=True)
 
     @classmethod
     def _hash(cls, instance: GridSettingsType) -> int:
@@ -110,7 +111,13 @@ class DBGridSettings(_UniqueMixin, DBBase):
             )
 
         elif isinstance(instance, MSKGridSettings):
-            return hash((instance.type, _float_to_db_int(instance.density)))
+            return hash(
+                (
+                    instance.type,
+                    _float_to_db_int(instance.density),
+                    _float_to_db_int(isntance.layers),
+                )
+            )
 
         else:
             raise NotImplementedError()
@@ -132,11 +139,13 @@ class DBGridSettings(_UniqueMixin, DBBase):
 
         elif isinstance(instance, MSKGridSettings):
             density = _float_to_db_int(instance.density)
+            layers = _float_to_db_int(instance.layers)
 
             return (
                 db.query(DBGridSettings)
                 .filter(DBGridSettings.type == instance.type)
                 .filter(DBGridSettings.msk_density == density)
+                .filter(DBGridSettings.msk_layers == layers)
             )
 
         else:
@@ -156,6 +165,7 @@ class DBGridSettings(_UniqueMixin, DBBase):
             return DBGridSettings(
                 type=instance.type,
                 msk_density=_float_to_db_int(instance.density),
+                msk_layers=_float_to_db_int(instance.layers),
             )
 
         else:
@@ -174,7 +184,9 @@ class DBGridSettings(_UniqueMixin, DBBase):
         elif db_instance.type == "msk":
             # noinspection PyTypeChecker
             return MSKGridSettings(
-                type=db_instance.type, density=_db_int_to_float(db_instance.msk_density)
+                type=db_instance.type,
+                density=_db_int_to_float(db_instance.msk_density),
+                layers=_db_int_to_float(db_instance.msk_layers),
             )
         else:
             raise NotImplementedError()
@@ -242,7 +254,7 @@ class DBPCMSettings(_UniqueMixin, DBBase):
 
 class DBESPSettings(_UniqueMixin, DBBase):
     __tablename__ = "esp_settings"
-    __table_args__ = (UniqueConstraint("basis", "method"),)
+    __table_args__ = (UniqueConstraint("basis", "method", "perturb_dipole"),)
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -251,10 +263,17 @@ class DBESPSettings(_UniqueMixin, DBBase):
 
     psi4_dft_grid_settings = Column(String, nullable=False)
 
+    perturb_dipole = Column(PickleType, index=True, nullable=False)
+
     @classmethod
     def _hash(cls, instance: ESPSettings) -> int:
         return hash(
-            (instance.basis, instance.method, instance.psi4_dft_grid_settings.value)
+            (
+                instance.basis,
+                instance.method,
+                instance.psi4_dft_grid_settings.value,
+                instance.perturb_dipole.tobytes(),
+            )
         )
 
     @classmethod
@@ -267,15 +286,22 @@ class DBESPSettings(_UniqueMixin, DBBase):
                 DBESPSettings.psi4_dft_grid_settings
                 == instance.psi4_dft_grid_settings.value
             )
+            .filter(DBESPSettings.perturb_dipole == instance.perturb_dipole)
         )
 
     @classmethod
     def _instance_to_db(cls, instance: ESPSettings) -> "DBESPSettings":
         return DBESPSettings(
             **instance.dict(
-                exclude={"grid_settings", "pcm_settings", "psi4_dft_grid_settings"}
+                exclude={
+                    "grid_settings",
+                    "pcm_settings",
+                    "psi4_dft_grid_settings",
+                    "perturb_dipole",
+                }
             ),
-            psi4_dft_grid_settings=instance.psi4_dft_grid_settings.value
+            psi4_dft_grid_settings=instance.psi4_dft_grid_settings.value,
+            perturb_dipole=instance.perturb_dipole
         )
 
 

@@ -41,6 +41,13 @@ pcm = {
   }
 }
 {%- endif %}
+{% if enable_perturb %}
+set{
+ PERTURB_H True
+ PERTURB_WITH DIPOLE
+ PERTURB_DIPOLE {{perturb_dipole}}
+ }
+{%- endif %}
 
 {%- if minimize %}
 

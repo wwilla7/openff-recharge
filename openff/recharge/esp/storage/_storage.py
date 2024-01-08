@@ -290,6 +290,7 @@ class MoleculeESPStore:
                     pcm_settings=None
                     if not db_conformer.pcm_settings
                     else DBPCMSettings.db_to_instance(db_conformer.pcm_settings),
+                    perturb_dipole=db_conformer.esp_settings.perturb_dipole,
                 ),
             )
             for db_record in db_records

@@ -55,11 +55,20 @@ class MSKGridSettings(BaseModel):
         1.0, description="The density [/Angstrom^2] of the MSK grid."
     )
 
+    layers: PositiveFloat = Field(
+        4.0, description="The number of layers of the MSK grid."
+    )
+
     @property
     def density_quantity(self) -> unit.Quantity:
         return self.density * unit.angstrom**-2
 
+    @property
+    def layers_quantity(self) -> unit.Quantity:
+        return self.layers * unit.dimensionless
+
     _validate_density = wrapped_float_validator("density", unit.angstrom**-2)
+    _validate_layers = wrapped_float_validator("layers", unit.dimensionless)
 
 
 GridSettings = LatticeGridSettings  # For backwards compatability.
@@ -141,8 +150,13 @@ class GridGenerator:
         """
 
         shells = []
+        layers = int(settings.layers)
 
-        for scale in [1.4, 1.6, 1.8, 2.0]:
+        increment = 0.4 / numpy.sqrt(layers)
+        scaling_factor = [1.4 + numpy.multiply(increment, i) for i in range(layers)]
+
+        # for scale in [1.4, 1.6, 1.8, 2.0]:
+        for scale in scaling_factor:
             atom_spheres = [
                 coordinate
                 + cls._generate_connolly_sphere(radius.item() * scale, settings.density)

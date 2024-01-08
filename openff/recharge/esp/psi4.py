@@ -83,6 +83,7 @@ class Psi4ESPGenerator(ESPGenerator):
             template = jinja2.Template(file.read())
 
         enable_pcm = settings.pcm_settings is not None
+        enable_perturb = settings.perturb_dipole.any()
 
         properties = []
 
@@ -98,6 +99,7 @@ class Psi4ESPGenerator(ESPGenerator):
             "basis": settings.basis,
             "method": settings.method,
             "enable_pcm": enable_pcm,
+            "enable_perturb": enable_perturb,
             "dft_settings": settings.psi4_dft_grid_settings.value,
             "minimize": minimize,
             "properties": str(properties),
@@ -113,6 +115,9 @@ class Psi4ESPGenerator(ESPGenerator):
                     "pcm_area": settings.pcm_settings.cavity_area,
                 }
             )
+
+        if enable_perturb:
+            template_inputs.update({"perturb_dipole": settings.perturb_dipole.tolist()})
 
         rendered_template = template.render(template_inputs)
         # Remove the white space after the for loop
